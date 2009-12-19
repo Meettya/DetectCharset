@@ -1,0 +1,72 @@
+NAME
+
+DetectCharset - auto detector for Russion text.
+
+VERSION
+
+$VERSION 0.2.1
+
+SYNOPSIS
+
+DetectCharset - auto detector for Russion text in UTF-8 CP1251 KOI8-R ISO-8859-5 CP866 encoding
+
+        use DetectCharset;
+        my $obj = new DetectCharset;
+        # in $unknown_text we are have somthing in Russin 
+        my $rez = $obj->detect_text($unknown_text);
+        # more sophisticated with $files as full filepath
+        my $rez2 = $obj->detect_file($files);
+DESCRIPTION
+
+Модуль призван обеспечить облегчение вычисления кодировки текста или файла
+
+Используется следующим образом:
+
+        use DetectCharset;
+        my $obj = new DetectCharset;
+        ...
+        # in $unknown_text we are have somthing in Russin 
+        my $rez = $obj->detect_text($unknown_text);
+        ...
+        # more sophisticated with $files as full filepath
+        my $rez2 = $obj->detect_file($files);
+        
+При создании объекта возможно присваить 2 свойства
+        min_file_size {def 2_000_000} - для настройки минимальной глубины прохода по файлу значение задается в B<баллах>, используейте более 2_000_000 в случае возникновения ошибок при распозновании или менее, если файл невелик.
+        min_diff {def 1.5} - для настройки минимальной разницы в баллах между разными интерпретациями кодировок, используйте более 1.5 в случае нечеткого распознования или менее 1.5 в случае нулевого возврата
+        $obj->set_multi( min_diff => 2.5, min_file_size => 4_000_000 );
+        
+Реализовано 2 метода:
+1.) detect_text - для работы с текстами
+
+        my $rez = $obj->detect_text($unknown_text);
+Можно использовать в списковом контексте, в этом случае второе значение - набранные баллы. Реализовано в основном для использования в обработке файлов
+
+2.) detect_file - для работы с файлами
+
+        my $rez2 = $obj->detect_file($files);
+        
+Этот метод предпочтительнее при работе с файлами, т.к. теоретически не будет просматривать ВЕСЬ файл.
+Оба метода возвращают в скалярном значении имя кодировки из набора
+
+        UTF-8 CP1251 KOI8-R ISO-8859-5 CP866
+        
+для дальнейшего использования с Encode::from_to() или иными целями
+или
+
+-1 - в случае невозможности опознать кодировку - например нет русских слов в тексте
+
+ 0 - в случае невозможности опознать кодировку, однако в тексте есть русские слова или что-то их напоминающее
+AUTOR
+
+Meettya <meettya@gmail.com>
+
+BUGS
+
+SEE ALSO
+
+Lingua::DetectCharset
+
+COPYRIGHT
+
+Moscow, snow 2009
