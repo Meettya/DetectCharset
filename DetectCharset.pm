@@ -1,28 +1,24 @@
-#! /opt/local/bin/perl -w
-
 package DetectCharset;
 	
 use strict;
 use utf8;
 
-use Botox qw(new prepare set_multi AUTOLOAD);
+use Botox qw(:all);
 use Encode qw(:all from_to);
 use Fcntl qw(:DEFAULT :flock);
 use Carp;
 
-our $VERSION = 0.2.1;
+our $VERSION = 0.4.1;
 	
 =for nb
-
 Два необязательных параметра, можно использовать для настройки точности определения
 и глубины поиска по файлам
 
 @param {scalar} min_file_size
 @param {scalar} min_diff
 
-=cut
-
 my $obj = new DetectCharset (qw(min_file_size min_diff));
+=cut
 
 
 # Генерируем таблицу соответствий для поиска русского языка
