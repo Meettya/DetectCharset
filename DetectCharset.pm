@@ -43,7 +43,7 @@ sub detect_text {
 	
 	my @rez;
 		
-	my $all_rezalt = $self->$do_detect($text);
+	my $all_rezalt = &$do_detect($text);
 	
 	foreach my $char_code (sort { $all_rezalt->{$b} <=> $all_rezalt->{$a} }
                 keys %{$all_rezalt}) 
@@ -64,7 +64,8 @@ sub detect_text {
 	    
 	if( $all_rezalt->{$rez[0]} < 1 ) 
 		{return -1;}
-	elsif( $all_rezalt->{$rez[0]} > $all_rezalt->{$rez[1]}*($self->min_diff||$min_diff) )
+	elsif( $all_rezalt->{$rez[0]} > 
+			$all_rezalt->{$rez[1]}*( $self->can('min_diff') ? $self->min_diff() : $min_diff ) )
 		{return wantarray ? ( $rez[0], $all_rezalt->{$rez[0]} ) : $rez[0];}
 	else
 		{return 0;}
@@ -95,7 +96,8 @@ sub detect_file {
 		if ( keys (%rezalt) > 1 ) {
 			my ($leader, $second) = (sort { $rezalt{$b} <=> $rezalt{$a} }
                 keys %rezalt);
-			if ( $rezalt{$leader} > $rezalt{$second}*( $self->min_diff||$min_diff ) ){
+			if ( $rezalt{$leader} > 
+			$rezalt{$second}*( $self->min_diff||$min_diff ) ){
 				$ret = $leader;
 			}
 			$ret = 0;
@@ -107,6 +109,23 @@ sub detect_file {
 	
 }
 
+
+$do_detect = sub {
+	
+	my ( $result, $text ) = ( undef, @_ );
+	
+	foreach my $char (@charset) {
+		my ($i,$mark);
+		local $_= decode($char, $text );
+		for (split (/[\.\,\-\s\:\;\?\!\'\"\(\)\d<>]+/o)) {
+			for $i (0..length()-$pair_size) {
+				$mark += $sym_table{substr ($_, $i, $pair_size)} || 0;
+			}
+		}
+	$result->{$char} = $mark;	
+	}
+	return $result; 	
+};
 	
 1;
 
