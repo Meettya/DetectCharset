@@ -4,11 +4,11 @@ use strict;
 use utf8;
 
 use Botox qw(:all);
-use Encode qw(:all from_to);
+use Encode qw(decode);
 use Fcntl qw(:DEFAULT :flock);
 use Carp;
 
-our $VERSION = 0.4.1;
+our $VERSION = 0.5.4;
 	
 =for nb
 Два необязательных параметра, можно использовать для настройки точности определения
@@ -17,7 +17,6 @@ our $VERSION = 0.4.1;
 @param {scalar} min_file_size
 @param {scalar} min_diff
 
-my $obj = new DetectCharset (qw(min_file_size min_diff));
 =cut
 
 
@@ -37,20 +36,16 @@ my $do_detect;
 
 sub detect_text {
 	
-	my $self = shift;
-	my $text = shift;
+	my ( $self, $text ) = @_ ;
+	
 	$text =~ tr/\r\n//;
 	
-	my @rez;
+	my @res;
 		
-	my $all_rezalt = &$do_detect($text);
+	my $all_res = &$do_detect($text);
 	
-	foreach my $char_code (sort { $all_rezalt->{$b} <=> $all_rezalt->{$a} }
-                keys %{$all_rezalt}) 
-			{
-    			push @rez, $char_code || 0;
-    			last if ( $#rez == 2 );
-			}
+	@res[0..1] = map $_, sort { $all_res->{$b} <=> $all_res->{$a} } keys %{$all_res};
+	
 =for nb
 
 Возвращаем -1 если даже первый меньше единицы - вариант когда распозновать нечего
@@ -60,16 +55,14 @@ sub detect_text {
 
 =cut
 
-	return unless defined wantarray; # don't bother doing more	
-	    
-	if( $all_rezalt->{$rez[0]} < 1 ) 
-		{return -1;}
-	elsif( $all_rezalt->{$rez[0]} > 
-			$all_rezalt->{$rez[1]}*( $self->can('min_diff') ? $self->min_diff() : $min_diff ) )
-		{return wantarray ? ( $rez[0], $all_rezalt->{$rez[0]} ) : $rez[0];}
-	else
-		{return 0;}
-
+	return unless defined wantarray; # don't bother doing more		    
+	return -1 if( $all_res->{$res[0]} < 1 );
+	
+	if( $all_res->{$res[0]} > $all_res->{$res[1]}*
+			( $self->can('min_diff') ? $self->min_diff() : $min_diff ) ){
+		return wantarray ? ( $res[0], $all_res->{$res[0]} ) : $res[0] }
+	
+	return 0;
 }
 
 sub detect_file {
@@ -109,23 +102,22 @@ sub detect_file {
 	
 }
 
-
+	
 $do_detect = sub {
-	
 	my ( $result, $text ) = ( undef, @_ );
-	
-	foreach my $char (@charset) {
-		my ($i,$mark);
-		local $_= decode($char, $text );
-		for (split (/[\.\,\-\s\:\;\?\!\'\"\(\)\d<>]+/o)) {
-			for $i (0..length()-$pair_size) {
-				$mark += $sym_table{substr ($_, $i, $pair_size)} || 0;
+		foreach my $char (@charset) {		
+			my $mark ;		
+			my $string = decode( $char, $text );			
+			for my $chank ( split ( /[\.\,\-\s\:\;\?\!\'\"\(\)\d<>]+/ , $string ) ){			
+				for ( my ($i, $len) = ( 0, length($chank)-$pair_size ); $i <= $len; $i++ ){		
+					$mark += $sym_table{substr ($chank, $i, $pair_size)} || 0;
+				}
 			}
+		$result->{$char} = $mark;	
 		}
-	$result->{$char} = $mark;	
-	}
-	return $result; 	
+	return $result;
 };
+
 	
 1;
 
@@ -892,7 +884,7 @@ DetectCharset - auto detector for Russion text.
 
 =head1 VERSION
 
-B<$VERSION 0.2.1>
+B<$VERSION 0.5.1>
 
 =head1 SYNOPSIS
 
