@@ -35,25 +35,6 @@ my @charset = qw(UTF-8 CP1251 KOI8-R ISO-8859-5 CP866);
 
 my $do_detect;
 
-$do_detect = sub {
-	
-	my $self = shift;
-	my $text = shift;
-	my %rezalt;
-	
-	foreach my $char (@charset) {
-		my ($i,$mark);
-		$_= decode($char, $text );
-		for (split (/[\.\,\-\s\:\;\?\!\'\"\(\)\d<>]+/o)) {
-			for $i (0..length()-$pair_size) {
-				$mark += $sym_table{substr ($_, $i, $pair_size)} || 0;
-			}
-		}
-	$rezalt{$char} = $mark;	
-	}
-	return \%rezalt; 	
-};
-
 sub detect_text {
 	
 	my $self = shift;
