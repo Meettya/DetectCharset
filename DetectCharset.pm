@@ -8,7 +8,7 @@ use Encode qw(decode);
 use Fcntl qw(:DEFAULT :flock);
 use Carp;
 
-our $VERSION = 0.5.5;
+our $VERSION = 0.6.1;
 	
 =for nb
 Два необязательных параметра, можно использовать для настройки точности определения
@@ -43,7 +43,8 @@ sub detect_text {
 	my @res;
 	my $all_res = &$do_detect($text);
 	
-	@res[0..1] = map ( $_, sort { $all_res->{$b} <=> $all_res->{$a} } keys %{$all_res} );
+	@res[0..1] = sort { $all_res->{$b} <=> $all_res->{$a} } 
+						grep $all_res->{$_}, keys %{$all_res};
 	
 =for nb
 
@@ -107,7 +108,7 @@ $do_detect = sub {
 		foreach my $char (@charset) {		
 			my $mark;		
 			my $string = decode( $char, $text );			
-			for my $chank ( split ( /[\.\,\-\s\:\;\?\!\'\"\(\)\d<>]+/ , $string ) ){			
+			for my $chank ( split ( /\W+/ , $string ) ){			
 				for ( my ($i, $len) = ( 0, length($chank)-$pair_size ); $i <= $len; $i++ ){		
 					$mark += $sym_table{substr ($chank, $i, $pair_size)} || 0;
 				}
@@ -882,7 +883,7 @@ DetectCharset - auto detector for Russion text.
 
 =head1 VERSION
 
-B<$VERSION 0.5.5>
+B<$VERSION 0.6.1>
 
 =head1 SYNOPSIS
 
