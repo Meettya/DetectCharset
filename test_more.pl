@@ -1,6 +1,7 @@
 #!/opt/local/bin/perl -w
 
-use 5.12.0; # to enable all feature && strict pragma
+#use 5.12.0; # to enable all feature && strict pragma
+use strict;
 use lib qw(../Botox);
 use Encode qw(encode decode);
 
