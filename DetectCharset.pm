@@ -64,7 +64,7 @@ sub detect_text {
 =cut
 
 	return unless defined wantarray; # don't bother doing more		    
-	return -1 if( $all_res->{$res[0]} < 1 );
+	return -1 if( !defined $res[0] || $all_res->{$res[0]} < 1 );
 	
 	if( $all_res->{$res[0]} > $all_res->{$res[1]}*
 			( $self->can('min_diff') ? $self->min_diff() : $min_diff ) ){
@@ -81,16 +81,17 @@ sub detect_file {
 	my ($ret, %rezalt);
 	
 	croak "$! $filename" unless (-f $filename);	
-	open (FH, "<", $filename) or croak "$! $filename";
-	flock(FH, 1) or croak "$! $filename";
-	while (<FH>) {
+	open (my $fh, "<", $filename) or croak "$! $filename";
+	flock($fh, 1) or croak "$! $filename";
+	while (<$fh>) {
 		
 		my ($kode, $ball) = $self->detect_text($_);
-		$rezalt{$kode} += $ball if ($kode =~ /^[a-z]/i);
+		$kode =~ /^[a-z]/i ? ($rezalt{$kode} += $ball) : next ;
 		
-	  if ($rezalt{$kode} > ($self->min_file_size || $min_file_size) && keys (%rezalt) == 1 )
+	  if ( keys (%rezalt) == 1 && $rezalt{$kode} > ( $self->can('min_file_size') ? $self->min_file_size() :
+	  							$min_file_size ) )
 		{
-			close FH;
+			close $fh;
 			return $kode;
 		}
 		
@@ -105,7 +106,7 @@ sub detect_file {
 		}
 	}
 	
-	close FH;
+	close $fh;
 	return defined $ret ? $ret : -1;
 	
 }
