@@ -1,5 +1,5 @@
 package DetectCharset;
-	
+
 use strict;
 use utf8;
 
@@ -10,7 +10,7 @@ use Carp;
 
 
 our $VERSION = 0.7.1;
-	
+
 =for nb
 Два необязательных параметра, можно использовать для настройки точности определения
 и глубины поиска по файлам
@@ -26,7 +26,7 @@ my %sym_table;
 
 my $symb_filename = 'Russian.cp'; # имя файла таблицы символов
 
-croak "$! $symb_filename" unless (-f $symb_filename);	
+croak "$! $symb_filename" unless (-f $symb_filename);
 open (my $fh, "<:utf8", $symb_filename) or croak "$! $symb_filename";
 while (<$fh>) {
 	$sym_table{$1} = $2 if /(\w+)\s(\d+)/;
@@ -38,22 +38,22 @@ my $pair_size = 2;
 my $min_diff = 1.5;
 my $min_file_size = 2_000_000;
 
-my @charset = qw(UTF-8 CP1251 KOI8-R ISO-8859-5 CP866);	
+my @charset = qw(UTF-8 CP1251 KOI8-R ISO-8859-5 CP866);
 
 my $do_detect;
 
 sub detect_text {
-	
+
 	my ( $self, $text, $how ) = @_ ;
-	
+
 	$text =~ tr/\r\n//;
-	
+
 	my @res;
 	my $all_res = &$do_detect($text);
-	
-	@res[0..1] = sort { $all_res->{$b} <=> $all_res->{$a} } 
+
+	@res[0..1] = sort { $all_res->{$b} <=> $all_res->{$a} }
 						grep $all_res->{$_}, keys %{$all_res};
-	
+
 =for nb
 
 Возвращаем -1 если даже первый меньше единицы - вариант когда распозновать нечего
@@ -63,13 +63,13 @@ sub detect_text {
 
 =cut
 
-	return unless defined wantarray; # don't bother doing more		    
+	return unless defined wantarray; # don't bother doing more
 	return -1 if( !defined $res[0] || $all_res->{$res[0]} < 1 );
-	
+
 	if( $all_res->{$res[0]} > $all_res->{$res[1]}*
 			( $self->can('min_diff') ? $self->min_diff() : $min_diff ) ){
 		return wantarray ? ( $res[0], $all_res->{$res[0]} ) : $res[0] }
-	
+
 	return 0;
 }
 
@@ -77,59 +77,60 @@ sub detect_file {
 
 	my $self = shift;
 	my $filename = shift;
-	
+
 	my ($ret, %rezalt);
-	
-	croak "$! $filename" unless (-f $filename);	
+
+	croak "$! $filename" unless (-f $filename);
 	open (my $fh, "<", $filename) or croak "$! $filename";
 	flock($fh, 1) or croak "$! $filename";
 	while (<$fh>) {
-		
+
 		my ($kode, $ball) = $self->detect_text($_);
 		$kode =~ /^[a-z]/i ? ($rezalt{$kode} += $ball) : next ;
-		
-	  if ( keys (%rezalt) == 1 && $rezalt{$kode} > ( $self->can('min_file_size') ? $self->min_file_size() :
-	  							$min_file_size ) )
+
+	  if ( keys (%rezalt) == 1 && $rezalt{$kode} > ( $self->can('min_file_size') ?
+					$self->min_file_size() : $min_file_size ) )
 		{
 			close $fh;
 			return $kode;
 		}
-		
+
 		if ( keys (%rezalt) > 1 ) {
 			my ($leader, $second) = (sort { $rezalt{$b} <=> $rezalt{$a} }
                 keys %rezalt);
-			if ( $rezalt{$leader} > 
+			if ( $rezalt{$leader} >
 			$rezalt{$second}*( $self->min_diff||$min_diff ) ){
 				$ret = $leader;
 			}
 			$ret = 0;
 		}
 	}
-	
+
 	close $fh;
 	return defined $ret ? $ret : -1;
-	
+
 }
 
 
 $do_detect = sub {
 	my ( $result, $text ) = ( undef, @_ );
-		foreach my $char (@charset) {		
-			my $mark;		
-			my $string = decode( $char, $text );			
-			for my $chank ( split ( /\W+/ , $string ) ){			
-				for ( my ($i, $len) = ( 0, length($chank)-$pair_size ); $i <= $len; $i++ ){		
+		foreach my $char (@charset) {
+			my $mark;
+			my $string = decode( $char, $text );
+			for my $chank ( split ( /\W+/ , $string ) ){
+				for ( my ($i, $len) = ( 0, length($chank)-$pair_size ); $i <= $len; $i++ ){
 					$mark += $sym_table{substr ($chank, $i, $pair_size)} || 0;
 				}
 			}
-		$result->{$char} = $mark;	
+		$result->{$char} = $mark;
 		}
 	return $result;
 };
-			
+
 
 1;
 
+__END__
 
 =encoding utf-8
 
