@@ -67,7 +67,8 @@ sub detect_text {
 	return -1 if( !defined $res[0] || $all_res->{$res[0]} < 1 );
 
 	if( $all_res->{$res[0]} > $all_res->{$res[1]}*
-			( $self->can('min_diff') ? $self->min_diff() : $min_diff ) ){
+			( $self->can('min_diff') and defined $self->min_diff ?
+								$self->min_diff : $min_diff ) ){
 		return wantarray ? ( $res[0], $all_res->{$res[0]} ) : $res[0] }
 
 	return 0;
@@ -87,7 +88,8 @@ sub detect_file {
 		$kode =~ /^[a-z]/i ? ( $rezalt{$kode} += $ball ) : next ;
 
 	  if ( keys ( %rezalt ) == 1 && $rezalt{$kode} > 
-	  		( $self->can( 'min_file_size' ) ? $self->min_file_size : $min_file_size ) )
+	  		( $self->can( 'min_file_size' ) and defined $self->min_file_size ?
+	  						$self->min_file_size : $min_file_size ) )
 		{
 			close $fh;
 			return $kode;
@@ -97,7 +99,8 @@ sub detect_file {
 			my ( $leader, $second ) = sort { $rezalt{$b} <=> $rezalt{$a} }
                 keys %rezalt;
 			if ( $rezalt{$leader} >
-			$rezalt{$second}*( $self->can( 'min_diff' ) ? $self->min_diff : $min_diff ) ){
+			$rezalt{$second}*( $self->can( 'min_diff' ) and defined $self->min_diff ?
+							$self->min_diff : $min_diff ) ){
 				$ret = $leader;
 			}
 			$ret = 0;
