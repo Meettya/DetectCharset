@@ -2,7 +2,7 @@
 
 #use 5.12.0; # to enable all feature && strict pragma
 use strict;
-use lib qw(../Botox);
+
 use Encode qw(encode decode);
 
 use Test::More tests => 8; # 4 codetest
@@ -17,6 +17,22 @@ my %rec_ok = map { $_, encode ( $_, decode("UTF-8", $test_text) ) }
 						qw(UTF-8 CP1251 KOI8-R ISO-8859-5 CP866);
 
 my $ch_d = new DetectCharset;
+
+print $ch_d->min_diff."\n";
+
+$ch_d->min_diff(4);
+
+print $ch_d->min_diff."\n";
+
+
+print $ch_d->min_file_size."\n";
+
+$ch_d->min_file_size(4_000_000);
+
+print $ch_d->min_file_size."\n";
+
+print $ch_d->max;
+ 
 print "\nTest encoding recognition:\n";
 ok ( $ch_d->detect_text($rec_ok{$_}) eq $_ , "$_ recognized" ) for keys %rec_ok;
 print "\nTest file encoding recognition:\n";

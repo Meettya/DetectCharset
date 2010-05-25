@@ -3,6 +3,7 @@ package DetectCharset;
 use strict;
 use utf8;
 
+use lib qw(../Botox);
 use Botox qw(:all);
 use Encode qw(decode);
 use Fcntl qw(:DEFAULT :flock);
@@ -20,6 +21,13 @@ our $VERSION = 0.7.1;
 
 =cut
 
+# переменные экземпляра
+our $init = { 'min_diff' => 1.5 , 'min_file_size' => 2_000_000 };
+
+# приватные переменные
+my $do_detect;
+my $pair_size = 2;
+my @charset = qw(UTF-8 CP1251 KOI8-R ISO-8859-5 CP866);
 
 # Таблица соответствий для поиска русского языка
 my %sym_table;
@@ -33,14 +41,6 @@ while (<$fh>) {
 }
 close $fh;
 
-
-my $pair_size = 2;
-my $min_diff = 1.5;
-my $min_file_size = 2_000_000;
-
-my @charset = qw(UTF-8 CP1251 KOI8-R ISO-8859-5 CP866);
-
-my $do_detect;
 
 sub detect_text {
 
@@ -66,8 +66,7 @@ sub detect_text {
 	return unless defined wantarray; # don't bother doing more
 	return -1 if( !defined $res[0] || $all_res->{$res[0]} < 1 );
 
-	if( $all_res->{$res[0]} > $all_res->{$res[1]}*
-			( $self->can('min_diff') ? $self->min_diff() : $min_diff ) ){
+	if( $all_res->{$res[0]} > $all_res->{$res[1]}*$self->min_diff ){
 		return wantarray ? ( $res[0], $all_res->{$res[0]} ) : $res[0] }
 
 	return 0;
@@ -86,18 +85,16 @@ sub detect_file {
 		my ( $kode, $ball ) = $self->detect_text( $_ );
 		$kode =~ /^[a-z]/i ? ( $rezalt{$kode} += $ball ) : next ;
 
-	  if ( keys ( %rezalt ) == 1 && $rezalt{$kode} > 
-	  		( $self->can( 'min_file_size' ) ? $self->min_file_size : $min_file_size ) )
+	  if ( keys %rezalt == 1 && $rezalt{$kode} > $self->min_file_size  )
 		{
 			close $fh;
 			return $kode;
 		}
 
-		if ( keys ( %rezalt ) > 1 ) {
+		if ( keys %rezalt > 1 ) {
 			my ( $leader, $second ) = sort { $rezalt{$b} <=> $rezalt{$a} }
                 keys %rezalt;
-			if ( $rezalt{$leader} >
-			$rezalt{$second}*( $self->can( 'min_diff' ) ? $self->min_diff : $min_diff ) ){
+			if ( $rezalt{$leader} > $rezalt{$second}*$self->min_diff ){
 				$ret = $leader;
 			}
 			$ret = 0;
