@@ -1,14 +1,15 @@
 package DetectCharset;
 
 use strict;
+use warnings;
+
 use utf8;
 
 use lib qw(../Botox);
-use Botox qw(:all);
+use Botox qw(new);
 use Encode qw(decode);
 use Fcntl qw(:DEFAULT :flock);
 use Carp;
-
 
 our $VERSION = 0.7.1;
 
@@ -22,7 +23,7 @@ our $VERSION = 0.7.1;
 =cut
 
 # переменные экземпляра
-our $prototype = { 'min_diff_ro' => 1.5 , 'min_file_size' => 2_000_000 };
+our $object_prototype = { min_diff_ro => 1.5 , min_file_size => 2_000_000 };
 
 sub set_min_diff{
 	my ( $self, $var ) = @_ ;

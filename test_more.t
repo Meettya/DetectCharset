@@ -16,12 +16,13 @@ my $test_text = 'Съешь еще этих мягких французских 
 my %rec_ok = map { $_, encode ( $_, decode("UTF-8", $test_text) ) } 
 						qw(UTF-8 CP1251 KOI8-R ISO-8859-5 CP866);
 
+#use base 'DetectCharset';
 
 my $ch_d = new DetectCharset;
 
 print $ch_d->min_diff."\n";
 
-$ch_d->min_diff(4);
+eval{$ch_d->min_diff(4)};
 
 $ch_d->set_min_diff(3);
 
@@ -34,7 +35,6 @@ $ch_d->min_file_size(4_000_000);
 
 print $ch_d->min_file_size."\n";
 
-print $ch_d->max;
  
 
 print "\nTest encoding recognition:\n";
