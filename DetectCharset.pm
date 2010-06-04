@@ -11,7 +11,7 @@ use Encode qw(decode);
 use Fcntl qw(:DEFAULT :flock);
 use Carp;
 
-our $VERSION = 0.7.1;
+our $VERSION = 0.7.4;
 
 =for nb
 Два необязательных параметра, можно использовать для настройки точности определения
@@ -23,14 +23,7 @@ our $VERSION = 0.7.1;
 =cut
 
 # переменные экземпляра
-our $object_prototype = { min_diff_ro => 1.5 , min_file_size => 2_000_000 };
-
-sub set_min_diff{
-	my ( $self, $var ) = @_ ;
-	$self->min_diff($var);
-	1;
-}
-
+our $object_prototype = { min_diff => 1.5 , min_file_size => 2_000_000 };
 
 # приватные переменные
 my $do_detect;
@@ -52,7 +45,7 @@ close $fh;
 
 sub detect_text {
 
-	my ( $self, $text, $how ) = @_ ;
+	my ( $self, $text ) = @_ ;
 
 	$text =~ tr/\r\n//;
 
@@ -73,7 +66,7 @@ sub detect_text {
 
 	return unless defined wantarray; # don't bother doing more
 	return -1 if( !defined $res[0] || $all_res->{$res[0]} < 1 );
-	if( $all_res->{$res[0]} > $all_res->{$res[1]}*$self->min_diff ){
+	if( !defined $res[1] || $all_res->{$res[0]} > $all_res->{$res[1]}*$self->min_diff ){
 		return wantarray ? ( $res[0], $all_res->{$res[0]} ) : $res[0] }
 
 	return 0;
@@ -90,6 +83,7 @@ sub detect_file {
 	while ( <$fh> ) {
 
 		my ( $kode, $ball ) = $self->detect_text( $_ );
+		
 		$kode =~ /^[a-z]/i ? ( $rezalt{$kode} += $ball ) : next ;
 
 	  if ( keys %rezalt == 1 && $rezalt{$kode} > $self->min_file_size  )
@@ -113,18 +107,21 @@ sub detect_file {
 
 }
 
-
 $do_detect = sub {
 	my ( $result, $text ) = ( undef, @_ );
 		foreach my $char (@charset) {
 			my $mark;
 			my $string = decode( $char, $text );
 			for my $chank ( split ( /\W+/ , $string ) ){
+			
+				next if ( length( $chank ) < 2 );
+				
 				for ( my ($i, $len) = ( 0, length($chank)-$pair_size ); $i <= $len; $i++ ){
 					$mark += $sym_table{substr ($chank, $i, $pair_size)} || 0;
 				}
+
 			}
-		$result->{$char} = $mark;
+		$result->{$char} = $mark ;
 		}
 	return $result;
 };
@@ -146,7 +143,7 @@ DetectCharset - auto detector for Russion text.
 
 =head1 VERSION
 
-B<$VERSION 0.7.1>
+B<$VERSION 0.7.4>
 
 =head1 SYNOPSIS
 
@@ -178,8 +175,6 @@ DetectCharset - auto detector for Russion text in UTF-8 CP1251 KOI8-R ISO-8859-5
 
 	min_file_size {def 2_000_000} - для настройки минимальной глубины прохода по файлу значение задается в B<баллах>, используейте более 2_000_000 в случае возникновения ошибок при распозновании или менее, если файл невелик.
 	min_diff {def 1.5} - для настройки минимальной разницы в баллах между разными интерпретациями кодировок, используйте более 1.5 в случае нечеткого распознования или менее 1.5 в случае нулевого возврата
-
-	$obj->set_multi( min_diff => 2.5, min_file_size => 4_000_000 );
 	
 Реализовано 2 метода:
 
